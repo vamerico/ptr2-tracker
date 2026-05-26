@@ -1,0 +1,5 @@
+node_modules/ 
+dist/ 
+ptr2-tracker/git/ 
+*.exe 
+node-v20.19.2-win-x64/ 

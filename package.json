@@ -1,0 +1,32 @@
+{
+  "name": "ptr2-tracker",
+  "version": "1.0.0",
+  "description": "PTR2 Debug Tracker — Controls Department",
+  "main": "main.js",
+  "scripts": {
+    "start": "electron .",
+    "dist": "electron-builder --win --x64"
+  },
+  "build": {
+    "appId": "com.controls.ptr2tracker",
+    "productName": "PTR2 Tracker",
+    "win": {
+      "target": "nsis",
+      "icon": "icon.ico"
+    },
+    "nsis": {
+      "oneClick": true,
+      "installerIcon": "icon.ico",
+      "uninstallerIcon": "icon.ico",
+      "shortcutName": "PTR2 Tracker"
+    },
+    "files": [
+      "main.js",
+      "src/**/*"
+    ]
+  },
+  "devDependencies": {
+    "electron": "^29.0.0",
+    "electron-builder": "^24.0.0"
+  }
+}

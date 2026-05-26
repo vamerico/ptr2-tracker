@@ -1,0 +1,362 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>PTR2 Tracker</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#0f1117;color:#e2e8f0;font-size:14px}
+header{display:flex;align-items:center;justify-content:space-between;padding:14px 24px;background:#161b27;border-bottom:1px solid #2d3448}
+header h1{font-size:16px;font-weight:600;color:#fff;letter-spacing:.3px}
+header span{font-size:12px;color:#64748b}
+.tabs{display:flex;gap:2px;padding:0 24px;background:#161b27;border-bottom:1px solid #2d3448}
+.tab{padding:10px 18px;font-size:13px;cursor:pointer;border:none;background:none;color:#64748b;border-bottom:2px solid transparent;margin-bottom:-1px;transition:color .15s}
+.tab:hover{color:#cbd5e1}
+.tab.active{color:#fff;border-bottom-color:#6366f1;font-weight:500}
+.content{padding:24px}
+.metrics{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:24px}
+.metric{background:#161b27;border:1px solid #2d3448;border-radius:10px;padding:14px 16px}
+.metric-label{font-size:11px;color:#64748b;text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px}
+.metric-value{font-size:26px;font-weight:600}
+.metric-value.total{color:#e2e8f0}
+.metric-value.danger{color:#f87171}
+.metric-value.warning{color:#fbbf24}
+.metric-value.success{color:#4ade80}
+.add-row{display:grid;grid-template-columns:1fr 110px 130px 110px 80px;gap:8px;margin-bottom:14px;align-items:center}
+input,select{width:100%;font-size:13px;padding:7px 10px;border:1px solid #2d3448;border-radius:7px;background:#1e2436;color:#e2e8f0;outline:none;transition:border-color .15s}
+input:focus,select:focus{border-color:#6366f1}
+input::placeholder{color:#475569}
+.btn{font-size:13px;padding:7px 14px;border:1px solid #2d3448;border-radius:7px;background:#1e2436;color:#e2e8f0;cursor:pointer;transition:background .15s}
+.btn:hover{background:#2d3448}
+.btn-primary{background:#6366f1;border-color:#6366f1;color:#fff}
+.btn-primary:hover{background:#5558e3}
+.filter-row{display:flex;gap:8px;margin-bottom:14px;align-items:center;flex-wrap:wrap}
+.filter-row select{width:auto;min-width:120px}
+.filter-label{font-size:12px;color:#64748b}
+table{width:100%;border-collapse:collapse}
+th{text-align:left;padding:9px 12px;font-weight:500;font-size:11px;color:#64748b;text-transform:uppercase;letter-spacing:.5px;border-bottom:1px solid #2d3448;background:#161b27;position:sticky;top:0}
+td{padding:8px 12px;border-bottom:1px solid #1e2436;vertical-align:middle}
+tr:hover td{background:#1a1f2e}
+.badge{display:inline-block;padding:3px 9px;border-radius:12px;font-size:11px;font-weight:500}
+.badge-open{background:#3b1919;color:#f87171}
+.badge-wip{background:#3b2e0a;color:#fbbf24}
+.badge-resolved{background:#0f2e1a;color:#4ade80}
+.badge-blocked{background:#1e1b3b;color:#a78bfa}
+.badge-crit{background:#3b1919;color:#f87171}
+.badge-high{background:#3b2e0a;color:#fbbf24}
+.badge-med{background:#0f2236;color:#60a5fa}
+.badge-low{background:#1e2436;color:#94a3b8}
+.title-input{width:100%;font-size:13px;padding:4px 8px;border:1px solid transparent;border-radius:6px;background:transparent;color:#e2e8f0;cursor:text}
+.title-input:hover{border-color:#2d3448;background:#1e2436}
+.title-input:focus{border-color:#6366f1;background:#1e2436;outline:none}
+.small-input{width:100px;font-size:12px;padding:4px 7px}
+.small-select{width:100px;font-size:12px;padding:4px 7px}
+.del-btn{background:none;border:none;cursor:pointer;color:#475569;font-size:18px;padding:0 4px;line-height:1}
+.del-btn:hover{color:#f87171}
+.section{display:none}
+.section.active{display:block}
+.week-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:8px;margin-bottom:16px}
+.day-card{background:#161b27;border:1px solid #2d3448;border-radius:8px;padding:10px;min-height:90px}
+.day-card.drag-over{border-color:#6366f1;background:#1a1b35}
+.day-header{font-size:11px;font-weight:600;color:#94a3b8;margin-bottom:6px}
+.day-date{font-size:11px;color:#64748b}
+.day-items{display:flex;flex-direction:column;gap:4px;min-height:40px}
+.day-chip{font-size:11px;padding:3px 8px;border-radius:6px;background:#1e2436;color:#cbd5e1;cursor:grab;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;border:1px solid #2d3448;user-select:none}
+.day-chip:active{cursor:grabbing}
+.unscheduled-pool{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px;padding:12px;background:#161b27;border:1px solid #2d3448;border-radius:8px}
+.pool-label{font-size:11px;color:#64748b;margin-bottom:8px;width:100%}
+.report-box{background:#161b27;border:1px solid #2d3448;border-radius:10px;padding:20px;font-size:13px;line-height:1.8;white-space:pre-wrap;color:#cbd5e1;min-height:300px;font-family:'Consolas','Courier New',monospace}
+.empty-msg{text-align:center;padding:3rem;color:#475569;font-size:13px}
+::-webkit-scrollbar{width:6px;height:6px}
+::-webkit-scrollbar-track{background:#0f1117}
+::-webkit-scrollbar-thumb{background:#2d3448;border-radius:3px}
+</style>
+</head>
+<body>
+
+<header>
+  <h1>⚙️ PTR2 Debug Tracker — Controls Department</h1>
+  <span id="save-status">Dados salvos automaticamente</span>
+</header>
+
+<div class="tabs">
+  <button class="tab active" onclick="switchTab('issues')">🐛 Issues</button>
+  <button class="tab" onclick="switchTab('schedule')">📅 Cronograma</button>
+  <button class="tab" onclick="switchTab('report')">📄 Relatório</button>
+</div>
+
+<div class="content">
+
+  <!-- ISSUES TAB -->
+  <div id="sec-issues" class="section active">
+    <div class="metrics">
+      <div class="metric"><div class="metric-label">Total</div><div class="metric-value total" id="m-total">0</div></div>
+      <div class="metric"><div class="metric-label">Aberto / Bloqueado</div><div class="metric-value danger" id="m-open">0</div></div>
+      <div class="metric"><div class="metric-label">Em Andamento</div><div class="metric-value warning" id="m-wip">0</div></div>
+      <div class="metric"><div class="metric-label">Resolvido</div><div class="metric-value success" id="m-res">0</div></div>
+    </div>
+
+    <div class="add-row">
+      <input id="i-title" placeholder="Descrição da issue..." onkeydown="if(event.key==='Enter')addIssue()"/>
+      <select id="i-pri">
+        <option value="Critical">Critical</option>
+        <option value="High" selected>High</option>
+        <option value="Medium">Medium</option>
+        <option value="Low">Low</option>
+      </select>
+      <input id="i-owner" placeholder="Responsável" onkeydown="if(event.key==='Enter')addIssue()"/>
+      <select id="i-status">
+        <option value="Open" selected>Open</option>
+        <option value="In progress">In progress</option>
+        <option value="Blocked">Blocked</option>
+        <option value="Resolved">Resolved</option>
+      </select>
+      <button class="btn btn-primary" onclick="addIssue()">+ Adicionar</button>
+    </div>
+
+    <div class="filter-row">
+      <span class="filter-label">Filtrar:</span>
+      <select id="f-status" onchange="renderTable()">
+        <option value="">Todos os status</option>
+        <option>Open</option><option>In progress</option><option>Blocked</option><option>Resolved</option>
+      </select>
+      <select id="f-pri" onchange="renderTable()">
+        <option value="">Todas as prioridades</option>
+        <option>Critical</option><option>High</option><option>Medium</option><option>Low</option>
+      </select>
+      <button class="btn" style="margin-left:auto" onclick="exportCSV()">⬇ Exportar CSV</button>
+    </div>
+
+    <div style="overflow-x:auto">
+      <table>
+        <thead>
+          <tr><th>#</th><th>Descrição</th><th>Prioridade</th><th>Responsável</th><th>Status</th><th></th></tr>
+        </thead>
+        <tbody id="issue-tbody"></tbody>
+      </table>
+    </div>
+    <div id="empty-msg" class="empty-msg" style="display:none">Nenhuma issue encontrada.</div>
+  </div>
+
+  <!-- SCHEDULE TAB -->
+  <div id="sec-schedule" class="section">
+    <div style="display:flex;gap:16px;align-items:flex-end;margin-bottom:20px;flex-wrap:wrap">
+      <div>
+        <div style="font-size:11px;color:#64748b;margin-bottom:5px;text-transform:uppercase;letter-spacing:.5px">Início do debug</div>
+        <input type="date" id="proj-start" style="width:170px" onchange="renderSchedule()"/>
+      </div>
+      <div>
+        <div style="font-size:11px;color:#64748b;margin-bottom:5px;text-transform:uppercase;letter-spacing:.5px">Prazo final</div>
+        <input type="date" id="proj-end" style="width:170px" onchange="renderSchedule()"/>
+      </div>
+      <div style="font-size:12px;color:#64748b;padding-bottom:8px">Arraste as issues para os dias para distribuir o trabalho.</div>
+    </div>
+    <div id="schedule-grid"></div>
+  </div>
+
+  <!-- REPORT TAB -->
+  <div id="sec-report" class="section">
+    <div style="display:flex;gap:8px;margin-bottom:16px;align-items:center;flex-wrap:wrap">
+      <select id="r-audience" style="width:160px">
+        <option value="internal">Time interno</option>
+        <option value="customer">Cliente</option>
+      </select>
+      <input id="r-reporter" placeholder="Seu nome" style="width:180px"/>
+      <button class="btn btn-primary" onclick="generateReport()">↺ Gerar relatório</button>
+      <button class="btn" onclick="copyReport()">⎘ Copiar</button>
+    </div>
+    <div class="report-box" id="report-out">Configure as opções acima e clique em "Gerar relatório".</div>
+  </div>
+
+</div>
+
+<script>
+const SEED=[
+  {id:1,title:"OP120 Run Time do Exaustor na HMI errado",priority:"High",owner:"",status:"Open",day:null},
+  {id:2,title:"SPC com sensores enroscando",priority:"High",owner:"",status:"Open",day:null},
+  {id:3,title:"Home após portal fixar garra retorna peça e re-aciona OMS",priority:"Critical",owner:"",status:"Open",day:null},
+  {id:4,title:"Ajustar Sensor inspeção visual CV7 — posição avançada",priority:"Medium",owner:"",status:"Open",day:null},
+  {id:5,title:"Home na OP190 travando — falta de enable da Nagel",priority:"Critical",owner:"",status:"Blocked",day:null},
+  {id:6,title:"Repeat gerando falha",priority:"High",owner:"",status:"Open",day:null},
+  {id:7,title:"OP65CN travando",priority:"High",owner:"",status:"Open",day:null},
+  {id:8,title:"OP105 CN travando",priority:"High",owner:"",status:"Open",day:null},
+  {id:9,title:"OP20 Gantry gerando alarme",priority:"High",owner:"",status:"Open",day:null},
+  {id:10,title:"CN 54 falha Profinet",priority:"Critical",owner:"",status:"Open",day:null},
+  {id:11,title:"Máquinas Bifuso gerando alarme de MQL",priority:"High",owner:"",status:"Open",day:null},
+  {id:12,title:"Máquina 04-01 trocar cabo MQL",priority:"Medium",owner:"",status:"Open",day:null},
+  {id:13,title:"Controle de assento MU",priority:"Medium",owner:"",status:"Open",day:null},
+  {id:14,title:"Sequência de descarga dos portais 120 e 100",priority:"High",owner:"",status:"Open",day:null},
+  {id:15,title:"OP120.2 falha wpconfig",priority:"High",owner:"",status:"Open",day:null},
+];
+
+let issues=[];
+let nextId=16;
+
+async function init(){
+  const saved = await window.electronAPI.loadIssues();
+  issues = saved || SEED.map(i=>({...i}));
+  nextId = Math.max(...issues.map(i=>i.id))+1;
+  updateMetrics(); renderTable();
+  const today=new Date(), end=new Date(today);
+  end.setDate(end.getDate()+17);
+  document.getElementById('proj-start').value=fmt(today);
+  document.getElementById('proj-end').value=fmt(end);
+}
+
+async function save(){
+  await window.electronAPI.saveIssues(issues);
+  const el=document.getElementById('save-status');
+  el.textContent='✓ Salvo';
+  setTimeout(()=>el.textContent='Dados salvos automaticamente',2000);
+}
+
+function addIssue(){
+  const t=document.getElementById('i-title').value.trim();
+  if(!t)return;
+  issues.push({id:nextId++,title:t,priority:document.getElementById('i-pri').value,owner:document.getElementById('i-owner').value.trim(),status:document.getElementById('i-status').value,day:null});
+  document.getElementById('i-title').value='';
+  save(); renderTable(); updateMetrics();
+}
+
+function deleteIssue(id){
+  if(!confirm('Remover esta issue?'))return;
+  issues=issues.filter(i=>i.id!==id);
+  save(); renderTable(); updateMetrics();
+}
+
+function cycleStatus(id){
+  const cycle=['Open','In progress','Blocked','Resolved'];
+  const issue=issues.find(i=>i.id===id);
+  if(issue){issue.status=cycle[(cycle.indexOf(issue.status)+1)%cycle.length];save();renderTable();updateMetrics();}
+}
+
+function setField(id,field,val){
+  const i=issues.find(x=>x.id===id);
+  if(i){i[field]=val;save();}
+}
+
+function priBadge(p){return p==='Critical'?'crit':p==='High'?'high':p==='Medium'?'med':'low';}
+function stBadge(s){return s==='Open'?'open':s==='In progress'?'wip':s==='Resolved'?'resolved':'blocked';}
+
+function renderTable(){
+  const fs=document.getElementById('f-status').value;
+  const fp=document.getElementById('f-pri').value;
+  const order={Critical:0,High:1,Medium:2,Low:3};
+  let filtered=issues.filter(i=>(!fs||i.status===fs)&&(!fp||i.priority===fp));
+  filtered.sort((a,b)=>order[a.priority]-order[b.priority]);
+  const tbody=document.getElementById('issue-tbody');
+  document.getElementById('empty-msg').style.display=filtered.length?'none':'block';
+  tbody.innerHTML=filtered.map(i=>`<tr>
+    <td style="color:#475569;white-space:nowrap;width:32px">${i.id}</td>
+    <td><input class="title-input" value="${esc(i.title)}" onblur="setField(${i.id},'title',this.value)" onkeydown="if(event.key==='Enter')this.blur()"/></td>
+    <td>
+      <select class="small-select" onchange="setField(${i.id},'priority',this.value);renderTable();updateMetrics()">
+        ${['Critical','High','Medium','Low'].map(p=>`<option${p===i.priority?' selected':''}>${p}</option>`).join('')}
+      </select>
+    </td>
+    <td><input class="small-input" value="${esc(i.owner)}" placeholder="—" onblur="setField(${i.id},'owner',this.value)" onkeydown="if(event.key==='Enter')this.blur()"/></td>
+    <td><span class="badge badge-${stBadge(i.status)}" style="cursor:pointer" onclick="cycleStatus(${i.id})" title="Clique para avançar o status">${i.status}</span></td>
+    <td><button class="del-btn" onclick="deleteIssue(${i.id})" title="Remover">✕</button></td>
+  </tr>`).join('');
+}
+
+function esc(str){return (str||'').replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;');}
+
+function updateMetrics(){
+  document.getElementById('m-total').textContent=issues.length;
+  document.getElementById('m-open').textContent=issues.filter(i=>i.status==='Open'||i.status==='Blocked').length;
+  document.getElementById('m-wip').textContent=issues.filter(i=>i.status==='In progress').length;
+  document.getElementById('m-res').textContent=issues.filter(i=>i.status==='Resolved').length;
+}
+
+function fmt(d){return d.toISOString().slice(0,10);}
+
+function getWorkdays(s,e){
+  const days=[];const d=new Date(s);
+  while(d<=e){if(d.getDay()!==0&&d.getDay()!==6)days.push(new Date(d));d.setDate(d.getDate()+1);}
+  return days;
+}
+
+function renderSchedule(){
+  const s=document.getElementById('proj-start').value;
+  const e=document.getElementById('proj-end').value;
+  if(!s||!e)return;
+  const days=getWorkdays(new Date(s),new Date(e));
+  const wn=['Dom','Seg','Ter','Qua','Qui','Sex','Sáb'];
+  const mn=['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'];
+  let html='<div class="week-grid">';
+  days.forEach(d=>{
+    const key=fmt(d);
+    const assigned=issues.filter(i=>i.day===key);
+    html+=`<div class="day-card" id="dc-${key}" ondragover="event.preventDefault();this.classList.add('drag-over')" ondragleave="this.classList.remove('drag-over')" ondrop="dropIssue(event,'${key}')">
+      <div class="day-header">${wn[d.getDay()]} <span class="day-date">${d.getDate()} ${mn[d.getMonth()]}</span></div>
+      <div class="day-items">${assigned.map(i=>`<div class="day-chip" draggable="true" ondragstart="dragIssue(event,${i.id})" title="${esc(i.title)}">#${i.id} ${esc(i.title)}</div>`).join('')}</div>
+    </div>`;
+  });
+  html+='</div>';
+  const un=issues.filter(i=>!i.day);
+  html+=`<div class="unscheduled-pool"><div class="pool-label">${un.length} issues não agendadas — arraste para um dia</div>${un.map(i=>`<div class="day-chip" draggable="true" ondragstart="dragIssue(event,${i.id})">#${i.id} ${esc(i.title)}</div>`).join('')}</div>`;
+  document.getElementById('schedule-grid').innerHTML=html;
+}
+
+let dragging=null;
+function dragIssue(e,id){dragging=id;e.dataTransfer.effectAllowed='move';}
+function dropIssue(e,key){
+  e.preventDefault();
+  document.querySelectorAll('.day-card').forEach(c=>c.classList.remove('drag-over'));
+  if(dragging===null)return;
+  const i=issues.find(x=>x.id===dragging);
+  if(i)i.day=key;
+  dragging=null; save(); renderSchedule();
+}
+
+function generateReport(){
+  const audience=document.getElementById('r-audience').value;
+  const reporter=document.getElementById('r-reporter').value||'Time de Controles';
+  const today=new Date().toLocaleDateString('pt-BR',{day:'numeric',month:'short',year:'numeric'});
+  const total=issues.length;
+  const open=issues.filter(i=>i.status==='Open').length;
+  const wip=issues.filter(i=>i.status==='In progress').length;
+  const blocked=issues.filter(i=>i.status==='Blocked').length;
+  const resolved=issues.filter(i=>i.status==='Resolved').length;
+  const crits=issues.filter(i=>i.priority==='Critical'&&i.status!=='Resolved');
+  const pct=total?Math.round(resolved/total*100):0;
+  let r='';
+  if(audience==='customer'){
+    r=`STATUS DE DEBUG PTR2 — ${today}\nElaborado por: ${reporter}\n\nRESUMO\nApós a conclusão do PTR2, o time de controles está trabalhando ativamente nos ${total} itens identificados. Progresso geral: ${pct}% resolvidos.\n\nVISÃO GERAL\n  • Resolvidos: ${resolved} de ${total} (${pct}%)\n  • Em andamento: ${wip}\n  • Pendentes: ${open}\n  • Bloqueados (aguardando): ${blocked}\n`;
+    if(crits.length){r+=`\nITENS CRÍTICOS EM ANDAMENTO\n`;crits.slice(0,5).forEach(i=>r+=`  • ${i.title}${i.owner?' (Resp.: '+i.owner+')':''}\n`);}
+    r+=`\nUma nova atualização será enviada no próximo ponto de contato.`;
+  } else {
+    r=`STATUS DE DEBUG PTR2 — ${today}\nAutor: ${reporter}\n\nMÉTRICAS\n  Total: ${total} | Resolvidos: ${resolved} (${pct}%) | Em andamento: ${wip} | Abertos: ${open} | Bloqueados: ${blocked} | Críticos abertos: ${crits.length}\n`;
+    if(crits.length){r+=`\nCRÍTICOS ABERTOS\n`;crits.forEach(i=>r+=`  [${i.id}] ${i.title}${i.owner?' — Resp.: '+i.owner:''} — ${i.status}\n`);}
+    const bk=issues.filter(i=>i.status==='Blocked');
+    if(bk.length){r+=`\nBLOQUEADOS\n`;bk.forEach(i=>r+=`  [${i.id}] ${i.title}${i.owner?' — Resp.: '+i.owner:''}\n`);}
+    r+=`\nRESOLUÇÕES RECENTES\n`;
+    const res=issues.filter(i=>i.status==='Resolved').slice(-5);
+    if(res.length)res.forEach(i=>r+=`  [${i.id}] ${i.title}\n`); else r+='  Nenhuma ainda.\n';
+  }
+  document.getElementById('report-out').textContent=r;
+}
+
+function copyReport(){
+  navigator.clipboard.writeText(document.getElementById('report-out').textContent);
+}
+
+async function exportCSV(){
+  const rows=issues.map(i=>[i.id,`"${(i.title||'').replace(/"/g,'""')}"`,i.priority,i.owner||'',i.status,i.day||'']);
+  const csv=[['ID','Descrição','Prioridade','Responsável','Status','Dia'].join(','),...rows.map(r=>r.join(','))].join('\n');
+  await window.electronAPI.exportCSV(csv);
+}
+
+function switchTab(name){
+  document.querySelectorAll('.tab').forEach((t,i)=>t.classList.toggle('active',['issues','schedule','report'][i]===name));
+  document.querySelectorAll('.section').forEach(s=>s.classList.remove('active'));
+  document.getElementById('sec-'+name).classList.add('active');
+  if(name==='schedule')renderSchedule();
+}
+
+init();
+</script>
+</body>
+</html>
